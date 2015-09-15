@@ -27,7 +27,8 @@ public class GetThread extends Thread{
                 http.setRequestProperty("Cookie", cookie);
                 int res = http.getResponseCode();
                 if (res != 200) {
-                    System.out.println("HTTP error: " + res);
+                    String errorInfo = http.getHeaderField("errorInfo");
+                    System.out.println("HTTP error: " + res + ", info: " + errorInfo);
                     Thread.currentThread().interrupt();
                     break;
                 }
@@ -42,7 +43,7 @@ public class GetThread extends Thread{
                             System.out.println(m);
 //                            lastReadMessage++;
                         }
-                        lastReadMessage = Integer.parseInt(http.getHeaderField("message_number"));
+                        lastReadMessage = Integer.parseInt(http.getHeaderField("messageNumber"));
 //                        System.out.println("last message: " + lastReadMessage);
                     }
                 }

@@ -22,7 +22,6 @@ login, password - A-Za-z0-9, no white spaces and no ,.;:/?''""()[]{}\|
 public class Main {
 
     private static String theCookie = null;
-    private static String recipient = null;
 
     private enum Command {
         STATUS,
@@ -99,7 +98,7 @@ public class Main {
                         exitRoom(data);
                         continue;
                     }
-                    if (command.matches("[a-zA-Z0-9]*")){ // private message
+                    if (command.matches("[a-zA-Z0-9]*")){ // private message or room message
                         to = command;
                         text = data;
                     }
@@ -111,11 +110,10 @@ public class Main {
                 m.setFrom(login);
 
                 try {
-                    int res = m.send("http://localhost:8080/add");
+                    String getErrorInfo = null;
+                    int res = m.send("http://localhost:8080/add", theCookie);
                     if (res != 200) {
                         System.out.println("HTTP error: " + res);
-                        logout();
-                        return;
                     }
                 } catch (IOException ex) {
                     System.out.println("Error: " + ex.getMessage());
@@ -137,14 +135,14 @@ public class Main {
             http.setRequestProperty("password", password);
             int res = http.getResponseCode();
             if (res != 200) {
-                System.out.println("HTTP error: " + res + ". Login FAIL");
+                System.out.println("HTTP error: " + res + ", " + http.getHeaderField("errorInfo"));
                 return false;
             }
             StringBuilder cookie = new StringBuilder();
             String headerName = null;
             for (int i=1; (headerName = http.getHeaderFieldKey(i)) != null; i++) {
                 if (headerName.equals("Set-Cookie")) {
-                    if (cookie.length()>0) {cookie.append("; ");}
+                    if (cookie.length() > 0) {cookie.append("; ");}
                     cookie = cookie.append(http.getHeaderField(i));
                 }
             }
@@ -167,7 +165,7 @@ public class Main {
             http.setRequestProperty("Cookie", theCookie); //otherwise will be NEW session
             int res = http.getResponseCode();
             if (res != 200) {
-                System.out.println("HTTP error: " + res + "Logout FAIL. Session may not be destroyed");
+                System.out.println("HTTP error: " + res + ", " + http.getHeaderField("errorInfo"));
                 return;
             }
             System.out.println("Logout SUCCESS");
@@ -184,7 +182,7 @@ public class Main {
             http.setRequestProperty("Cookie", theCookie);
             int res = http.getResponseCode();
             if (res != 200) {
-                System.out.println("HTTP error: " + res + "Getting users list FAIL");
+                System.out.println("HTTP error: " + res + ", " + http.getHeaderField("errorInfo"));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -198,11 +196,10 @@ public class Main {
             HttpURLConnection http = (HttpURLConnection) obj.openConnection();
             http.setRequestMethod("POST");
             http.setRequestProperty("Cookie", theCookie);
-//            http.setDoOutput(true);
             http.setRequestProperty("userStatus", status);
             int res = http.getResponseCode();
             if (res != 200) {
-                System.out.println("HTTP error: " + res + ". Status setting FAIL");
+                System.out.println("HTTP error: " + res + ", " + http.getHeaderField("errorInfo"));
                 return;
             }
             System.out.println("New status set SUCCESS");
@@ -220,7 +217,7 @@ public class Main {
             http.setRequestProperty("Cookie", theCookie);
             int res = http.getResponseCode();
             if (res != 200) {
-                System.out.println("HTTP error: " + res + ". Status getting FAIL");
+                System.out.println("HTTP error: " + res + ", " + http.getHeaderField("errorInfo"));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -234,15 +231,15 @@ public class Main {
             obj = new URL("http://localhost:8080/joinroom");
             HttpURLConnection http = (HttpURLConnection) obj.openConnection();
             http.setRequestMethod("POST");
+            http.setRequestProperty("Cookie", theCookie);
             http.setDoOutput(true);
             http.setRequestProperty("room", room);
             http.setRequestProperty("password", password);
             int res = http.getResponseCode();
             if (res != 200) {
-                System.out.println("HTTP error: " + res + ". Room joining FAIL");
+                System.out.println("HTTP error: " + res + ", " + http.getHeaderField("errorInfo"));
                 return false;
             }
-            recipient = room;
             System.out.println("Room joining SUCCESS");
             return true;
         } catch (IOException e) {
@@ -258,14 +255,14 @@ public class Main {
             obj = new URL("http://localhost:8080/exitroom");
             HttpURLConnection http = (HttpURLConnection) obj.openConnection();
             http.setRequestMethod("POST");
+            http.setRequestProperty("Cookie", theCookie);
             http.setDoOutput(true);
             http.setRequestProperty("room", room);
             int res = http.getResponseCode();
             if (res != 200) {
-                System.out.println("HTTP error: " + res + ". Room exit FAIL");
+                System.out.println("HTTP error: " + res + ", " + http.getHeaderField("errorInfo"));
                 return;
             }
-            recipient = null;
             System.out.println("Room exit SUCCESS");
         } catch (IOException e) {
             e.printStackTrace();

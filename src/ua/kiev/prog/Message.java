@@ -47,6 +47,20 @@ public class Message implements Serializable {
         }
     }
 
+    public int send(String url, String cookie) throws IOException {
+        URL obj = new URL(url);
+        HttpURLConnection conn = (HttpURLConnection) obj.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Cookie", cookie);
+        conn.setDoOutput(true);
+        try (OutputStream os = conn.getOutputStream()) {
+            String json = toJSON();
+            os.write(json.getBytes());
+            conn.getResponseMessage();
+            return conn.getResponseCode();
+        }
+    }
+
     public Date getDate() {
         return date;
     }
